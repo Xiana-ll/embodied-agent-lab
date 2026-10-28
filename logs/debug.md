@@ -128,6 +128,29 @@ $env:PYTHONIOENCODING = "utf-8"
 
 ---
 
+### 2.7 `git push` 报连不上 github.com:443
+
+**现象**：
+
+```
+fatal: unable to access 'https://github.com/Xiana-ll/embodied-agent-lab.git/':
+Failed to connect to github.com port 443 after 21052 ms: Could not connect to server
+```
+
+**原因**：本机没有走代理，直连 GitHub 时通时不通（同一台机器上 `Test-NetConnection github.com 443` 有时返回 True）。
+
+**解决**：本机有监听在 `7890` 端口的代理，给这个仓库单独配置之后推送成功：
+
+```bash
+git config http.proxy  "http://127.0.0.1:7890"
+git config https.proxy "http://127.0.0.1:7890"
+```
+
+**教训**：
+- `git config --global` 和仓库级配置要分清，这里只对单个仓库生效；
+- 网络类失败先看代理有没有开，再怀疑仓库权限或 token；
+- commit 是本地操作，**push 失败不会丢代码**，网络恢复后重推即可。
+
 ## 三、Agent 阶段
 
 ### 3.1 模型对「你好」也去调用工具
