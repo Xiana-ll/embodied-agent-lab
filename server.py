@@ -20,7 +20,7 @@ ROOT = Path(__file__).parent
 
 app = FastAPI()
 
-# 模型只在启动时加载一次，之后每个请求共用（否则每次请求都要重载 200MB）
+# 模型只在启动时加载一次，之后每个请求共用
 tok = AutoTokenizer.from_pretrained(MODEL_DIR, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_DIR, trust_remote_code=True, dtype=torch.float32
@@ -28,13 +28,11 @@ model = AutoModelForCausalLM.from_pretrained(
 
 
 def clean(text: str) -> str:
-    # 这个模型会先输出 <think> 思考段，演示时去掉，只留最终回答
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
     return text.replace("</think>", "").replace("<think>", "").strip()
 
 
 def generate(messages: list, use_tools: bool, temperature: float = 0.7, max_tokens: int = 256):
-    """跑一次模型。聊天和 Agent 都走这一个函数，避免两处逻辑不一致。"""
     prompt = tok.apply_chat_template(
         messages,
         tools=TOOLS if use_tools else None,
