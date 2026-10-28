@@ -32,6 +32,7 @@ class ChatRequest(BaseModel):
     temperature: float = 0.7
     max_tokens: int = 256
     stream: bool = False  # 先只做非流式，Agent 用不到流式
+    tools: list = []  # 工具清单，模型靠它决定调哪个
 
 
 @app.get("/health")
@@ -41,7 +42,9 @@ def health():
 
 @app.post("/v1/chat/completions")
 def chat(req: ChatRequest):
-    prompt = tok.apply_chat_template(req.messages, tokenize=False, add_generation_prompt=True)
+    prompt = tok.apply_chat_template(
+        req.messages, tools=req.tools or None, tokenize=False, add_generation_prompt=True
+    )
     inputs = tok(prompt, return_tensors="pt")
 
     with torch.no_grad():

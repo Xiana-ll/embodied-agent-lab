@@ -30,7 +30,21 @@ python server.py
 curl -X POST http://127.0.0.1:8000/v1/chat/completions ^
   -H "Content-Type: application/json" ^
   -d "{\"messages\":[{\"role\":\"user\",\"content\":\"你好\"}]}"
+
+# 4. 跑 Agent（需要服务还开着）
+python agent.py
 ```
+
+Agent 的效果：
+
+```
+===== 提问：帮我算一下 256 乘以 37 等于多少 =====
+[第1轮 模型] <tool_call>{"name": "calculate_math", "arguments": {"expression": "256 * 37"}}</tool_call>
+[执行工具] calculate_math({'expression': '256 * 37'}) -> {'result': 9472}
+[第2轮 模型] 256 乘以 37 等于 9472。
+```
+
+模型自己决定调哪个工具、传什么参数，代码里只写了「有哪些工具」，没写「什么情况用哪个」。
 
 返回结构和 OpenAI 一样，所以任何支持「自定义 base_url」的客户端都能直接接。
 
