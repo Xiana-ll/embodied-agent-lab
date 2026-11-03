@@ -52,6 +52,15 @@ def route(q):
         return "get_current_time"
     return None
 
+def extract_expr(q):
+    for cn, en in [("乘以", "*"), ("除以", "/"), ("加上", "+"), ("减去", "-"),
+                   ("乘", "*"), ("除", "/"), ("加", "+"), ("减", "-")]:
+        q = q.replace(cn, en)
+    m = re.search(r"(\d+)\s*的\s*(\d+)\s*次方", q)
+    if m:
+        return f"{m.group(1)}**{m.group(2)}"
+    return re.sub(r"[^\d+\-*/().\s]", " ", q).strip()
+
 
 if __name__ == "__main__":
     import torch

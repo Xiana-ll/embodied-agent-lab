@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from agent import executors, parse_calls
+from agent import executors, extract_expr, route
 from agent import tools as TOOLS
 from config import MODEL_DIR
 
@@ -106,29 +106,31 @@ def chat(req: ChatRequest):
 
 @app.post("/v1/agent")
 def agent(req: AgentRequest):
-    """在服务内部跑完整的工具调用循环，并把每一步的轨迹返回给网页显示。
+    """先用规则决定调哪个工具，再让模型把结果说成人话。
 
-    和 agent.py 的区别：agent.py 是通过 HTTP 请求自己，这里直接调本地模型。
-    逻辑（parse_calls / executors）是同一份代码，没有复制。
+    模型自主选工具在 63.9M 上不成立（见 logs/debug.md 第 3.2、4.1 节），
+    所以工具选择交给 route()，模型只负责组织语言。
     """
     messages = [{"role": "user", "content": req.question}]
     trace = []
 
-    for _ in range(req.max_rounds):
-        reply, _, _ = generate(messages, use_tools=True)
-        calls = parse_calls(reply)
-        if not calls:
-            return {"answer": reply, "trace": trace}
+    name = route(req.question)
+    if name is None:
+        reply, _, _ = generate(messages, use_tools=False)
+        return {"answer": reply, "trace": trace}
 
-        messages.append({"role": "assistant", "content": reply})
-        for name, args in calls:
-            try:
-                result = executors[name](**args)
-            except Exception as e:  # 参数是模型编的，可能算不出来
-                result = {"error": str(e)}
-            trace.append({"tool": name, "args": args, "result": result})
-            messages.append({"role": "tool", "content": json.dumps(result, ensure_ascii=False)})
+    args = {"expression": extract_expr(req.question)} if name == "calculate_math" else {}
+    try:
+        result = executors[name](**args)
+    except Exception as e:  # 参数是规则从原句里抠的，可能抠出空字符串
+        result = {"error": str(e)}
+    trace.append({"tool": name, "args": args, "result": result})
 
+    call_text = f'<tool_call>{{"name": "{name}", "arguments": {json.dumps(args, ensure_ascii=False)}}}</tool_call>'
+    messages.append({"role": "assistant", "content": call_text})
+    messages.append({"role": "tool", "content": json.dumps(result, ensure_ascii=False)})
+
+    reply, _, _ = generate(messages, use_tools=True)
     return {"answer": reply, "trace": trace}
 
 
