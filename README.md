@@ -27,12 +27,11 @@
 | --- | --- |
 | `config.py` | 模型所在的文件夹路径，换电脑时只改这一行 |
 | `check_model.py` | 冒烟测试：模型能不能加载、会不会正常回话 |
-| `agent.py` | 工具清单 + 执行器 + 调用循环；被 `server.py` import 复用 |
+| `agent.py` | 工具清单 + 执行器 + 路由；直接运行会加载模型跑一遍完整流程 |
 | `server.py` | 把模型包成 HTTP 服务：`/v1/chat/completions`、`/v1/agent`、网页 `/` |
 | `web/index.html` | 聊天页面，纯 HTML+JS，调上面两个接口 |
 | `start_demo.bat` | 一键启动 |
-| `my_agent.py` | 单文件独立版：自己加载模型、自己路由、自己执行工具，不经过 HTTP |
-| `my_eval.py` | 评测脚本：10 条测试集，对比「模型自主选择」与「规则路由」 |
+| `eval.py` | 评测：10 条测试集，对比「模型自主判断」与「规则路由」 |
 | `logs/debug.md` | 踩坑记录：现象 → 原因 → 解决 |
 
 ## 两条实现路线
@@ -41,7 +40,7 @@
 
 | | 服务版 | 单文件版 |
 | --- | --- | --- |
-| 入口 | `start_demo.bat` → `server.py` | `python my_agent.py` |
+| 入口 | `start_demo.bat` → `server.py` | `python agent.py` |
 | 模型加载 | 启动时一次，所有请求共用 | 每次运行加载一次 |
 | 工具选择 | 模型自主 + 规则路由兜底 | 规则路由 |
 | 用途 | 演示、给别人用 | 读懂原理、随手改 |
