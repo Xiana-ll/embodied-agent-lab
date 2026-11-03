@@ -1,22 +1,28 @@
 @echo off
-rem ============================================================
-rem  One-click launcher: starts the model server and opens the chat page.
-rem  If the venv path below does not exist, it falls back to "python".
-rem ============================================================
-chcp 65001 >nul
+rem One-click launcher. Starts the model server and opens the chat page.
+rem The venv lives under a Chinese-named folder, so this script finds it by
+rem structure instead of hardcoding the path (cmd mangles non-ASCII paths).
 cd /d "%~dp0"
 
-set "PY=C:\Users\24437\Desktop\11111\实验室\minimind-master\.venv-demo\Scripts\python.exe"
-if not exist "%PY%" set "PY=python"
+set "PY="
+for /d %%D in ("..\*") do (
+    if exist "%%D\minimind-master\.venv-demo\Scripts\python.exe" set "PY=%%D\minimind-master\.venv-demo\Scripts\python.exe"
+)
 
-echo Starting MiniMind demo (loading model, about 10 seconds)...
+if not defined PY (
+    echo [ERROR] venv python not found.
+    echo Expected: ..\*\minimind-master\.venv-demo\Scripts\python.exe
+    pause
+    exit /b 1
+)
+
+echo Found python: %PY%
+echo Starting MiniMind demo, model loads in about 10 seconds...
 echo.
 
-rem open the browser after a delay, so it does not hit a not-ready port
-start "" cmd /c "timeout /t 10 >nul & start http://127.0.0.1:8000/"
-
+start "" cmd /c "timeout /t 12 >nul & start http://127.0.0.1:8000/"
 "%PY%" server.py
 
 echo.
-echo Server stopped. Press any key to close this window.
+echo Server stopped. Press any key to close.
 pause >nul
