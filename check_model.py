@@ -3,8 +3,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from config import MODEL_DIR
 
-# 先只跑 CPU：模型只有约 54M 参数，CPU 足够快
-# （换 GPU 要 cu128 版 PyTorch，否则 Blackwell 显卡会报 "no kernel image"）
+
 torch.set_num_threads(8)
 
 tok = AutoTokenizer.from_pretrained(MODEL_DIR, trust_remote_code=True)

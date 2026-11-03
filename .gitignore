@@ -4,3 +4,4 @@ __pycache__/
 logs/*.log
 req.json
 resp.json
+.idea/
