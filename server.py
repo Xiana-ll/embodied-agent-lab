@@ -1,6 +1,5 @@
 # 把模型包成一个 OpenAI 兼容的 HTTP 服务
 # 目标：任何"支持自定义 base_url 的客户端"（包括自己的 Agent）都能直接调
-import json
 import re
 import time
 from pathlib import Path
@@ -20,7 +19,7 @@ ROOT = Path(__file__).parent
 
 app = FastAPI()
 
-# 模型只在启动时加载一次，之后每个请求共用（否则每次请求都要重载 200MB）
+# 模型只在启动时加载一次，之后每个请求共用（否则每次请求都要重载 122MB）
 tok = AutoTokenizer.from_pretrained(MODEL_DIR, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_DIR, trust_remote_code=True, dtype=torch.float32
@@ -67,7 +66,6 @@ class ChatRequest(BaseModel):
 
 class AgentRequest(BaseModel):
     question: str
-    max_rounds: int = 3
 
 
 @app.get("/")
@@ -106,32 +104,33 @@ def chat(req: ChatRequest):
 
 @app.post("/v1/agent")
 def agent(req: AgentRequest):
-    """先用规则决定调哪个工具，再让模型把结果说成人话。
+    """确定性问题由代码直接给答案，模型只处理开放问题。
 
-    模型自主选工具在 63.9M 上不成立（见 logs/debug.md 第 3.2、4.1 节），
-    所以工具选择交给 route()，模型只负责组织语言。
+    模型连工具返回的数值都不复述（见 logs/debug.md），所以算数、查时间这类
+    有唯一答案的问题，不再交给它组织语言，模板拼就行。
     """
-    messages = [{"role": "user", "content": req.question}]
     trace = []
 
     name = route(req.question)
     if name is None:
-        reply, _, _ = generate(messages, use_tools=False)
+        reply, _, _ = generate([{"role": "user", "content": req.question}], use_tools=False)
         return {"answer": reply, "trace": trace}
 
     args = {"expression": extract_expr(req.question)} if name == "calculate_math" else {}
     try:
         result = executors[name](**args)
-    except Exception as e:  # 参数是规则从原句里抠的，可能抠出空字符串
+    except Exception as e:  # 参数是从原句里抠的，可能抠出空字符串
         result = {"error": str(e)}
     trace.append({"tool": name, "args": args, "result": result})
 
-    call_text = f'<tool_call>{{"name": "{name}", "arguments": {json.dumps(args, ensure_ascii=False)}}}</tool_call>'
-    messages.append({"role": "assistant", "content": call_text})
-    messages.append({"role": "tool", "content": json.dumps(result, ensure_ascii=False)})
+    if isinstance(result, dict) and "error" in result:
+        answer = f"算不出来：{result['error']}"
+    elif name == "calculate_math":
+        answer = f"{args['expression']} = {result}"
+    else:
+        answer = f"现在是 {result}"
 
-    reply, _, _ = generate(messages, use_tools=True)
-    return {"answer": reply, "trace": trace}
+    return {"answer": answer, "trace": trace}
 
 
 if __name__ == "__main__":

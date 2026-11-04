@@ -1,10 +1,11 @@
 """工具层 + 本地运行入口。
 
 其他文件怎么用它：
-    server.py   from agent import tools, executors, parse_calls
+    server.py   from agent import executors, extract_expr, route
     eval.py     from agent import tools, route, parse_calls
 
-直接运行（python agent.py）会加载模型，走一遍完整流程。
+直接运行（python agent.py）会加载模型，演示「模型自主选工具」的结果——
+实测它选不对（见 logs/debug.md），这段保留作对照，实际服务走的是 route()。
 """
 import json
 import re

@@ -125,6 +125,34 @@ return None
 **取舍**：采用「规则兜底 + 模型负责组织语言」，并在 README 里注明模型不具备自主选择能力。
 
 
+### 2.6 双击 start_demo.bat，窗口一闪就退
+
+**现象**：双击没反应，看不到任何错误。
+
+**原因**：两个问题叠在一起。
+
+1. **`.bat` 里写了中文路径**。文件是 UTF-8 存的，但 cmd 按 GBK 解析，`实验室` 被读成 `瀹為獙瀹`，`if not exist` 判断失败，退回到系统 `python`（没装 torch），直接退出。
+2. **换行符是 LF 不是 CRLF**。`.bat` 必须 CRLF，否则 cmd 解析错乱，`rem One-click launcher` 被拆成两条命令：
+
+```
+'em' is not recognized as an internal or external command
+'d' is not recognized as an internal or external command
+```
+
+**解决**：脚本只用 ASCII、不写中文路径；换行改 CRLF；后来把 `minimind-master` 整体搬到 `11111\minimind-master`，路径里不再有中文。
+
+**教训**：`.bat` 的编码坑比 Python 狠——它不报错，只闪一下。脚本末尾加 `pause`，至少能看到红字。
+
+### 2.7 把 venv 也搬走，担心坏掉
+
+**现象**：整个 `minimind-master`（5.08 GB，含 `.venv-demo`）从中文路径移到 `11111\minimind-master`。
+
+**结果**：没坏。`sys.prefix` 自动指向新位置，torch / transformers / fastapi 全部可用。
+
+**原因**：venv 的 `python.exe` 靠自身所在目录推导 `sys.prefix`，不是写死的。会坏的是 `Scripts` 下的 console script（`pip.exe` 之类，里面写死绝对路径）——但我们只用 `python.exe`，所以没影响。
+
+**教训**：venv 可以整体移动，但要改用 `python -m pip`，别用 `pip.exe`。
+
 ## 三、已知边界
 
 | 问题 | 原因 | 后续 |
@@ -135,7 +163,7 @@ return None
 
 ---
 
-## 七、总结
+## 四、总结
 
 1.先写冒烟测试，把「模型坏了」和「服务坏了」分开，能省掉大量瞎猜。
 2.指标会骗人：50% 的正确率可能是「80% 输出同一个常量」碰巧撞对的。看到数字先问「这个数是怎么来的」。 
