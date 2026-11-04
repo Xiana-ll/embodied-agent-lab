@@ -106,5 +106,5 @@ python agent.py
 ## 环境
 
 - Python 3.11 / torch 2.11.0+cu128 / transformers 4.57.6 / fastapi / uvicorn
-- 模型：`C:\Users\24437\Desktop\11111\minimind-3`（122 MB，不进仓库）
+- 模型：`11111\minimind-master\scripts\minimind-3`（122 MB，不进仓库）
 - 模型来源：<https://github.com/jingyaogong/minimind>
