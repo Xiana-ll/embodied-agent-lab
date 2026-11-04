@@ -1,5 +1,7 @@
 @echo off
-rem One-click launcher: starts the model server, then opens http://127.0.0.1:8000/
+rem One-click launcher: starts the model server.
+rem The server opens the browser itself once the port is listening,
+rem so this window is the only console window you get.
 cd /d "%~dp0"
 
 set "PY=..\minimind-master\.venv-demo\Scripts\python.exe"
@@ -13,10 +15,10 @@ if not exist "%PY%" (
 )
 
 echo Python: %PY%
-echo Starting MiniMind demo, model loads in about 10 seconds...
+echo Starting MiniMind demo. The browser opens by itself when ready.
+echo Close this window or press Ctrl+C to stop the server.
 echo.
 
-start "" cmd /c "timeout /t 12 >nul & start http://127.0.0.1:8000/"
 "%PY%" server.py
 
 echo.

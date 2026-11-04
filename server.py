@@ -134,4 +134,20 @@ def agent(req: AgentRequest):
 
 
 if __name__ == "__main__":
+    import socket
+    import threading
+    import time
+    import webbrowser
+
+    def open_when_ready():
+        # 端口通了才开浏览器，别猜秒数
+        for _ in range(120):
+            try:
+                socket.create_connection(("127.0.0.1", 8000), timeout=1).close()
+                webbrowser.open("http://127.0.0.1:8000/")
+                return
+            except OSError:
+                time.sleep(1)
+
+    threading.Thread(target=open_when_ready, daemon=True).start()
     uvicorn.run(app, host="127.0.0.1", port=8000)
