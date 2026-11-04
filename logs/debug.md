@@ -143,16 +143,6 @@ return None
 
 **教训**：`.bat` 的编码坑比 Python 狠——它不报错，只闪一下。脚本末尾加 `pause`，至少能看到红字。
 
-### 2.7 把 venv 也搬走，担心坏掉
-
-**现象**：整个 `minimind-master`（5.08 GB，含 `.venv-demo`）从中文路径移到 `11111\minimind-master`。
-
-**结果**：没坏。`sys.prefix` 自动指向新位置，torch / transformers / fastapi 全部可用。
-
-**原因**：venv 的 `python.exe` 靠自身所在目录推导 `sys.prefix`，不是写死的。会坏的是 `Scripts` 下的 console script（`pip.exe` 之类，里面写死绝对路径）——但我们只用 `python.exe`，所以没影响。
-
-**教训**：venv 可以整体移动，但要改用 `python -m pip`，别用 `pip.exe`。
-
 ## 三、已知边界
 
 | 问题 | 原因 | 后续 |
